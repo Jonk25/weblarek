@@ -1,10 +1,15 @@
 import './scss/styles.scss';
 
-import { CatalogModel } from './components/base/CatalogModel';
-import { CartModel } from './components/base/CartModel';
-import { BuyerModel } from './components/base/BuyerModel';
+import { CatalogModel } from './components/models/CatalogModel';
+import { CartModel } from './components/models/CartModel';
+import { BuyerModel } from './components/models/BuyerModel';
 
 import { apiProducts } from './utils/data';
+
+import { Api } from './components/base/Api';
+import { ShopApi } from './components/models/ShopApi';
+
+import { API_URL } from './utils/constants';
 
 const catalog = new CatalogModel();
 catalog.setProducts(apiProducts.items);
@@ -24,7 +29,7 @@ console.log('7. Общая стоимость:', cart.getTotalPrice());
 console.log('8. Есть товар с id "1"?', cart.hasItem('1'));
 console.log('9. Есть товар с id "3"?', cart.hasItem('3'));
 
-cart.removeItem(apiProducts.items[0]);
+cart.removeItem(apiProducts.items[0].id);
 console.log('10. После удаления:', cart.getItems());
 cart.clear();
 console.log('11. После очистки:', cart.getItems());
@@ -35,7 +40,7 @@ buyer.setEmail('test@test.com');
 console.log('12. Данные покупателя:', buyer.getData());
 console.log('13. Ошибки валидации (не хватает payment и phone):', buyer.validate());
 
-buyer.setPayment('online');
+buyer.setPayment('card'); 
 buyer.setPhone('+79991234567');
 console.log('14. После полного заполнения:');
 console.log('15. Данные:', buyer.getData());
@@ -44,13 +49,7 @@ console.log('16. Ошибки (должны быть пустым объекто
 buyer.clear();
 console.log('17. После очистки:', buyer.getData());
 
-import { Api } from './components/base/Api';          
-import { ShopApi } from './components/base/ShopApi';         
-
-const API_URL = 'http://localhost:3000';
-
 const baseApi = new Api(API_URL);
-
 const shopApi = new ShopApi(baseApi);
 
 try {

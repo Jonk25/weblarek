@@ -11,8 +11,8 @@ export class CartModel {
         this._items.push(product);
     }
 
-    removeItem(product: IProduct): void {
-        this._items = this._items.filter(item => item.id !== product.id);
+    removeItem(id: string): void {
+        this._items = this._items.filter(item => item.id !== id);
     }
 
     clear(): void {
