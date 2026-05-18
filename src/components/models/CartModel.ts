@@ -1,33 +1,57 @@
+import { EventEmitter } from '../../components/base/Events';
 import { IProduct } from '../../types';
 
-export class CartModel {
-    private _items: IProduct[] = [];
-
-    getItems(): IProduct[] {
-        return this._items;
-    }
+export class CartModel extends EventEmitter {
+    private items: IProduct[] = [];
 
     addItem(product: IProduct): void {
-        this._items.push(product);
+        if (!this.hasItem(product.id)) {
+            this.items.push(product);
+            this.emit('cart:item-added', { product });
+            this.emit('cart:changed', { 
+                items: this.getItems(), 
+                total: this.getTotalPrice(),
+                count: this.getTotalCount()
+            });
+        }
     }
 
     removeItem(id: string): void {
-        this._items = this._items.filter(item => item.id !== id);
+        const index = this.items.findIndex(p => p.id === id);
+        if (index !== -1) {
+            const removed = this.items.splice(index, 1)[0];
+            this.emit('cart:item-removed', { product: removed });
+            this.emit('cart:changed', { 
+                items: this.getItems(), 
+                total: this.getTotalPrice(),
+                count: this.getTotalCount()
+            });
+        }
     }
 
     clear(): void {
-        this._items = [];
+        if (this.items.length > 0) {
+            this.items = [];
+            this.emit('cart:cleared');
+            this.emit('cart:changed', { items: [], total: 0, count: 0 });
+        }
+    }
+
+    getItems(): IProduct[] {
+        return [...this.items];
     }
 
     getTotalPrice(): number {
-        return this._items.reduce((sum, item) => sum + (item.price || 0), 0);
+        return this.items.reduce((sum, item) => {
+            return item.price !== null ? sum + item.price : sum;
+        }, 0);
     }
 
     getTotalCount(): number {
-        return this._items.length;
+        return this.items.length;
     }
 
     hasItem(id: string): boolean {
-        return this._items.some(item => item.id === id);
+        return this.items.some(p => p.id === id);
     }
 }

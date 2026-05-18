@@ -1,6 +1,7 @@
+import { EventEmitter } from '../base/Events';
 import { IBuyer, TPayment, TBuyerErrors } from '../../types';
 
-export class BuyerModel {
+export class BuyerModel extends EventEmitter {
     private payment: TPayment | null = null;
     private email: string = '';
     private phone: string = '';
@@ -8,18 +9,26 @@ export class BuyerModel {
 
     setPayment(payment: TPayment): void {
         this.payment = payment;
+        this.emit('buyer:payment-changed', { payment });
+        this.emit('buyer:changed', this.getData());
     }
 
     setEmail(email: string): void {
         this.email = email;
+        this.emit('buyer:email-changed', { email });
+        this.emit('buyer:changed', this.getData());
     }
 
     setPhone(phone: string): void {
         this.phone = phone;
+        this.emit('buyer:phone-changed', { phone });
+        this.emit('buyer:changed', this.getData());
     }
 
     setAddress(address: string): void {
         this.address = address;
+        this.emit('buyer:address-changed', { address });
+        this.emit('buyer:changed', this.getData());
     }
 
     getData(): IBuyer {
@@ -27,7 +36,7 @@ export class BuyerModel {
             payment: this.payment,
             email: this.email,
             phone: this.phone,
-            address: this.address,
+            address: this.address
         };
     }
 
@@ -36,24 +45,26 @@ export class BuyerModel {
         this.email = '';
         this.phone = '';
         this.address = '';
+        this.emit('buyer:cleared');
+        this.emit('buyer:changed', this.getData());
     }
 
     validate(): TBuyerErrors {
         const errors: TBuyerErrors = {};
-
-        if (!this.payment) {
-            errors.payment = 'Не выбран способ оплаты';
+        
+        if (!this.address.trim()) errors.address = 'Укажите адрес доставки';
+        if (!this.payment) errors.payment = 'Выберите способ оплаты';
+        if (!this.email.trim()) errors.email = 'Укажите email';
+        if (!this.phone.trim()) errors.phone = 'Укажите телефон';
+        
+        if (this.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.email)) {
+            errors.email = 'Введите корректный email';
         }
-        if (!this.email.trim()) {
-            errors.email = 'Укажите email';
+        
+        if (this.phone && this.phone.replace(/\D/g, '').length < 10) {
+            errors.phone = 'Введите корректный телефон';
         }
-        if (!this.phone.trim()) {
-            errors.phone = 'Укажите телефон';
-        }
-        if (!this.address.trim()) {
-            errors.address = 'Укажите адрес';
-        }
-
+        
         return errors;
     }
 }

@@ -4,59 +4,87 @@ import { CatalogModel } from './components/models/CatalogModel';
 import { CartModel } from './components/models/CartModel';
 import { BuyerModel } from './components/models/BuyerModel';
 
-import { apiProducts } from './utils/data';
-
 import { Api } from './components/base/Api';
 import { ShopApi } from './components/models/ShopApi';
-
 import { API_URL } from './utils/constants';
 
-const catalog = new CatalogModel();
-catalog.setProducts(apiProducts.items);
-console.log('1. Массив товаров каталога (тестовый):', catalog.getProducts());
-console.log('2. Товар с id "2":', catalog.getProductById('2'));
-console.log('3. Товар с id "99" (не существует):', catalog.getProductById('99'));
+import { Catalog } from './components/Catalog';
+import { Cart } from './components/pages/Cart';
+import { Modal } from './components/Modal';
+import { Counter } from './components/ui/Counter';
+import { SuccessMessage } from './components/ui/SuccessMessage';
+import { OrderFormStep1 } from './components/forms/OrderFormStep1';
+import { OrderFormStep2 } from './components/forms/OrderFormStep2';
 
-catalog.setPreview(apiProducts.items[0]);
-console.log('4. Товар для предпросмотра:', catalog.getPreview());
+import { MainPresenter } from './presenters/MainPresenter';
 
-const cart = new CartModel();
-cart.addItem(apiProducts.items[0]);
-cart.addItem(apiProducts.items[1]);
-console.log('5. Товары в корзине:', cart.getItems());
-console.log('6. Количество:', cart.getTotalCount());
-console.log('7. Общая стоимость:', cart.getTotalPrice());
-console.log('8. Есть товар с id "1"?', cart.hasItem('1'));
-console.log('9. Есть товар с id "3"?', cart.hasItem('3'));
+document.addEventListener('DOMContentLoaded', async () => {
+    const catalogModel = new CatalogModel();
+    const cartModel = new CartModel();
+    const buyerModel = new BuyerModel();
 
-cart.removeItem(apiProducts.items[0].id);
-console.log('10. После удаления:', cart.getItems());
-cart.clear();
-console.log('11. После очистки:', cart.getItems());
+    const baseApi = new Api(API_URL);
+    const shopApi = new ShopApi(baseApi);
 
-const buyer = new BuyerModel();
-buyer.setAddress('ул. Пушкина');
-buyer.setEmail('test@test.com');
-console.log('12. Данные покупателя:', buyer.getData());
-console.log('13. Ошибки валидации (не хватает payment и phone):', buyer.validate());
+    const gallery = document.querySelector('.gallery') as HTMLElement;
+    const modalContainer = document.querySelector('#modal-container') as HTMLElement;
+    const counterElement = document.querySelector('.header__basket-counter') as HTMLElement;
 
-buyer.setPayment('card'); 
-buyer.setPhone('+79991234567');
-console.log('14. После полного заполнения:');
-console.log('15. Данные:', buyer.getData());
-console.log('16. Ошибки (должны быть пустым объектом):', buyer.validate());
+    if (!gallery || !modalContainer || !counterElement) {
+        console.error('Не найдены обязательные элементы DOM');
+        return;
+    }
 
-buyer.clear();
-console.log('17. После очистки:', buyer.getData());
+    const cardCatalogTpl = document.querySelector('#card-catalog') as HTMLTemplateElement;
+    const cardPreviewTpl = document.querySelector('#card-preview') as HTMLTemplateElement;
+    const cardBasketTpl  = document.querySelector('#card-basket') as HTMLTemplateElement;
+    const basketTpl      = document.querySelector('#basket') as HTMLTemplateElement;
+    const successTpl     = document.querySelector('#success') as HTMLTemplateElement;
+    const orderTpl       = document.querySelector('#order') as HTMLTemplateElement;
+    const contactsTpl    = document.querySelector('#contacts') as HTMLTemplateElement;
 
-const baseApi = new Api(API_URL);
-const shopApi = new ShopApi(baseApi);
+    const getTemplateElement = (template: HTMLTemplateElement | null): HTMLElement => {
+        if (!template) throw new Error('HTML-шаблон не найден в DOM');
+        const clone = template.content.cloneNode(true) as DocumentFragment;
+        return clone.firstElementChild as HTMLElement;
+    };
 
-try {
-    const data = await shopApi.getProductList();
-    console.log('Ответ сервера /product/:', data);
-    catalog.setProducts(data.items);
-    console.log('Каталог после загрузки с сервера:', catalog.getProducts());
-} catch (err) {
-    console.error('Ошибка получения товаров:', err);
-}
+    const catalogView = new Catalog(gallery);
+    const counterView = new Counter(counterElement);
+    const modalView   = new Modal(modalContainer);
+
+    const cartView        = new Cart(getTemplateElement(basketTpl));
+    const successView     = new SuccessMessage(getTemplateElement(successTpl));
+    const orderStep1View  = new OrderFormStep1(getTemplateElement(orderTpl));
+    const orderStep2View  = new OrderFormStep2(getTemplateElement(contactsTpl));
+
+    const presenter = new MainPresenter({
+        api: shopApi,
+        catalogModel,
+        cartModel,
+        buyerModel,
+        catalogView,
+        cartView,
+        modal: modalView,
+        counterView,
+        successMessage: successView,
+        orderFormStep1: orderStep1View,
+        orderFormStep2: orderStep2View,
+        productCardTemplate: cardCatalogTpl,
+        previewCardTemplate: cardPreviewTpl,
+        cartItemTemplate: cardBasketTpl,
+    });
+
+    const basketIcon = document.querySelector('.header__basket') as HTMLElement;
+    basketIcon?.addEventListener('click', () => presenter.openCart());
+
+    presenter.init();
+
+    try {
+        const { items } = await shopApi.getProductList();
+        console.log(`Загружено товаров: ${items.length}`);
+        catalogModel.setProducts(items);
+    } catch (error) {
+        console.error('Ошибка загрузки каталога:', error);
+    }
+});

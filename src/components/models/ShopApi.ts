@@ -7,13 +7,11 @@ export class ShopApi {
         this._api = api;
     }
 
-    // Получение списка товаров с сервера
     getProductList(): Promise<IProductListResponse> {
         return this._api.get<IProductListResponse>('/product/');
     }
 
-    // Отправка заказа
     postOrder(order: IOrderRequest): Promise<IOrderResponse> {
-        return this._api.post<IOrderResponse>('/order/', order, 'POST');
+        return this._api.post<IOrderResponse>('/order/', order);
     }
 }
