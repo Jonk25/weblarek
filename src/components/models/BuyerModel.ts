@@ -57,14 +57,6 @@ export class BuyerModel extends EventEmitter {
         if (!this.email.trim()) errors.email = 'Укажите email';
         if (!this.phone.trim()) errors.phone = 'Укажите телефон';
         
-        if (this.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.email)) {
-            errors.email = 'Введите корректный email';
-        }
-        
-        if (this.phone && this.phone.replace(/\D/g, '').length < 10) {
-            errors.phone = 'Введите корректный телефон';
-        }
-        
         return errors;
     }
 }

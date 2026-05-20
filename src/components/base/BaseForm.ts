@@ -11,23 +11,17 @@ export abstract class BaseForm<T extends object> extends Component<T> {
         this.submitBtn = container.querySelector('button[type="submit"]')!;
         this.errorsEl = container.querySelector('.form__errors')!;
 
-        container.addEventListener('input', () => this.checkValidation());
-        
+        container.addEventListener('input', () => this.emitChange());
         container.addEventListener('submit', (e) => {
             e.preventDefault();
-            const values = this.collectFormValues();
-            const errors = this.validate(values);
-            if (Object.keys(errors).length === 0) {
-                this.emit('form:submit', values);
-            }
+            this.emit(this.submitEvent);
         });
     }
 
-    protected checkValidation(): void {
-        const values = this.collectFormValues();
-        const errors = this.validate(values);
-        this.errors = errors; 
-        this.emit('form:change', values);
+    protected abstract get submitEvent(): string;
+
+    protected emitChange(): void {
+        this.emit('form:change', this.collectFormValues());
     }
 
     set errors(v: Record<string, string>) {
@@ -49,15 +43,14 @@ export abstract class BaseForm<T extends object> extends Component<T> {
         return this.container;
     }
 
-    protected emit<U extends object>(event: string, data?: U): void {
+    protected emit(event: string, data?: object): void {
         this.events.emit(event, data);
     }
 
-    on<U extends object>(event: string, cb: (data: U) => void): void {
+    on(event: string, cb: (data?: object) => void): void {
         this.events.on(event, cb);
     }
 
     protected abstract collectFormValues(): Partial<T>;
-    protected abstract validate(values: Partial<T>): Record<string, string>;
     protected abstract populateFields(values: Partial<T>): void;
 }

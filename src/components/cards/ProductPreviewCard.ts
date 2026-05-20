@@ -1,30 +1,27 @@
-import { BaseCard } from '../base/BaseCard';
+import { ProductCardBase } from '../base/ProductCardBase';
 import { IProduct } from '../../types';
-import { EventEmitter } from '../base/Events';
 
-export class ProductPreviewCard extends BaseCard {
-    private descEl: HTMLElement;  
-    private events = new EventEmitter();
+export class ProductPreviewCard extends ProductCardBase {
+    private descEl: HTMLElement;
 
     constructor(container: HTMLElement) {
-    super(container);
-    
-    this.descEl = container.querySelector('.card__text')!;  
-    if (!this.descEl) {
-        throw new Error('PreviewCard: не найден элемент .card__text');
+        super(container);
+        
+        this.descEl = container.querySelector('.card__text')!;
+        if (!this.descEl) {
+            throw new Error('PreviewCard: не найден элемент .card__text');
+        }
+
+        this.buttonEl?.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            this.emit<IProduct>('product:toggle-cart', this.getData() as IProduct);  
+        });
     }
 
-    this.buttonEl?.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        console.log('🛒 Клик по кнопке "Купить/Удалить"');
-        this.emit<IProduct>('product:toggle-cart', this.getData() as IProduct);
-    });
-}
-
-    render(data?: Partial<IProduct>): HTMLElement {
+    override render(data?: Partial<IProduct>): HTMLElement {
+        super.render(data);
         if (data) {
-            super.render(data);
             this.descEl.textContent = data.description ?? '';
         }
         return this.container;
@@ -32,15 +29,11 @@ export class ProductPreviewCard extends BaseCard {
 
     setButtonState(inCart: boolean): void {
         if (this.buttonEl) {
-            this.buttonEl.textContent = inCart ? 'Удалить из корзины' : 'Купить';
+            if (this.buttonEl.disabled) {
+                this.buttonEl.textContent = 'Недоступно';
+            } else {
+                this.buttonEl.textContent = inCart ? 'Удалить из корзины' : 'Купить';
+            }
         }
-    }
-
-    emit<T extends object>(event: string, data?: T): void {
-        this.events.emit(event, data);
-    }
-
-    on<T extends object>(event: string, cb: (data: T) => void): void {
-        this.events.on(event, cb);
     }
 }

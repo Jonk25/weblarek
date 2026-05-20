@@ -14,9 +14,13 @@ export class OrderFormStep1 extends BaseForm<IBuyer> {
             btn.addEventListener('click', () => {
                 this.paymentButtons.forEach(b => b.classList.remove('button_alt-active'));
                 btn.classList.add('button_alt-active');
-                this.checkValidation(); 
+                this.emitChange();
             });
         });
+    }
+
+    protected get submitEvent(): string {
+        return 'order-step1:submit';
     }
 
     protected collectFormValues(): Partial<IBuyer> {
@@ -27,16 +31,9 @@ export class OrderFormStep1 extends BaseForm<IBuyer> {
         };
     }
 
-    protected validate(v: Partial<IBuyer>): Record<string, string> {
-        const errors: Record<string, string> = {};
-        if (!v.address) errors.address = 'Укажите адрес';
-        if (!v.payment) errors.payment = 'Выберите способ оплаты';
-        return errors;
-    }
-
     protected populateFields(v: Partial<IBuyer>): void {
-        if (v.address) this.addressInput.value = v.address;
-        if (v.payment) {
+        if (v.address !== undefined) this.addressInput.value = v.address;
+        if (v.payment !== undefined) {
             this.paymentButtons.forEach(btn => {
                 btn.classList.toggle('button_alt-active', btn.getAttribute('name') === v.payment);
             });
