@@ -16,9 +16,14 @@ import { SuccessMessage } from './components/ui/SuccessMessage';
 import { OrderFormStep1 } from './components/forms/OrderFormStep1';
 import { OrderFormStep2 } from './components/forms/OrderFormStep2';
 
+import { ProductCard } from './components/cards/ProductCard';
+import { ProductPreviewCard } from './components/cards/ProductPreviewCard';
+import { CartItemCard } from './components/cards/CartItemCard';
+
 import { MainPresenter } from './presenters/MainPresenter';
 
 document.addEventListener('DOMContentLoaded', async () => {
+
     const catalogModel = new CatalogModel();
     const cartModel = new CartModel();
     const buyerModel = new BuyerModel();
@@ -35,28 +40,30 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
     }
 
-    const cardCatalogTpl = document.querySelector('#card-catalog') as HTMLTemplateElement;
     const cardPreviewTpl = document.querySelector('#card-preview') as HTMLTemplateElement;
-    const cardBasketTpl  = document.querySelector('#card-basket') as HTMLTemplateElement;
-    const basketTpl      = document.querySelector('#basket') as HTMLTemplateElement;
-    const successTpl     = document.querySelector('#success') as HTMLTemplateElement;
-    const orderTpl       = document.querySelector('#order') as HTMLTemplateElement;
-    const contactsTpl    = document.querySelector('#contacts') as HTMLTemplateElement;
+    const basketTpl = document.querySelector('#basket') as HTMLTemplateElement;
+    const successTpl = document.querySelector('#success') as HTMLTemplateElement;
+    const orderTpl = document.querySelector('#order') as HTMLTemplateElement;
+    const contactsTpl = document.querySelector('#contacts') as HTMLTemplateElement;
 
     const getTemplateElement = (template: HTMLTemplateElement | null): HTMLElement => {
         if (!template) throw new Error('HTML-шаблон не найден в DOM');
-        const clone = template.content.cloneNode(true) as DocumentFragment;
-        return clone.firstElementChild as HTMLElement;
+        return (template.content.cloneNode(true) as DocumentFragment).firstElementChild as HTMLElement;
     };
 
     const catalogView = new Catalog(gallery);
     const counterView = new Counter(counterElement);
-    const modalView   = new Modal(modalContainer);
+    const modalView = new Modal(modalContainer);
+    const cartView = new Cart(getTemplateElement(basketTpl));
+    const successView = new SuccessMessage(getTemplateElement(successTpl));
+    const orderStep1View = new OrderFormStep1(getTemplateElement(orderTpl));
+    const orderStep2View = new OrderFormStep2(getTemplateElement(contactsTpl));
 
-    const cartView        = new Cart(getTemplateElement(basketTpl));
-    const successView     = new SuccessMessage(getTemplateElement(successTpl));
-    const orderStep1View  = new OrderFormStep1(getTemplateElement(orderTpl));
-    const orderStep2View  = new OrderFormStep2(getTemplateElement(contactsTpl));
+    const cardFactory = {
+        createCatalogCard: (container: HTMLElement) => new ProductCard(container),
+        createPreviewCard: (container: HTMLElement) => new ProductPreviewCard(container),
+        createCartItem: (container: HTMLElement) => new CartItemCard(container)
+    };
 
     const presenter = new MainPresenter({
         api: shopApi,
@@ -70,9 +77,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         successMessage: successView,
         orderFormStep1: orderStep1View,
         orderFormStep2: orderStep2View,
-        productCardTemplate: cardCatalogTpl,
         previewCardTemplate: cardPreviewTpl,
-        cartItemTemplate: cardBasketTpl,
+        cardFactory
     });
 
     const basketIcon = document.querySelector('.header__basket') as HTMLElement;
@@ -82,7 +88,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     try {
         const { items } = await shopApi.getProductList();
-        console.log(`Загружено товаров: ${items.length}`);
         catalogModel.setProducts(items);
     } catch (error) {
         console.error('Ошибка загрузки каталога:', error);

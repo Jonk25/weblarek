@@ -20,7 +20,7 @@ export abstract class ProductCardBase extends BaseCard {
     }
 
     override render(data?: Partial<IProduct>): HTMLElement {
-        super.render(data); 
+        super.render(data);
         if (data) {
             this.image = data.image ?? '';
             this.category = data.category ?? '';

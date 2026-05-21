@@ -12,9 +12,12 @@ export class OrderFormStep1 extends BaseForm<IBuyer> {
 
         this.paymentButtons.forEach(btn => {
             btn.addEventListener('click', () => {
-                this.paymentButtons.forEach(b => b.classList.remove('button_alt-active'));
-                btn.classList.add('button_alt-active');
-                this.emitChange();
+                const newPayment = btn.getAttribute('name') as TPayment;
+                
+                this.emit('form:change', {
+                    payment: newPayment,
+                    address: this.addressInput.value.trim()
+                });
             });
         });
     }

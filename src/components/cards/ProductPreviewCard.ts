@@ -15,7 +15,7 @@ export class ProductPreviewCard extends ProductCardBase {
         this.buttonEl?.addEventListener('click', (e) => {
             e.preventDefault();
             e.stopPropagation();
-            this.emit<IProduct>('product:toggle-cart', this.getData() as IProduct);  
+            this.emit('product:toggle-cart');
         });
     }
 
